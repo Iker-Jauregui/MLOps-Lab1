@@ -1,0 +1,18 @@
+[project]
+name = "mlops-lab1"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "click>=8.3.0",
+    "numpy>=2.3.4",
+]
+
+[dependency-groups]
+dev = [
+    "black>=25.11.0",
+    "pylint>=4.0.3",
+    "pytest>=9.0.1",
+    "pytest-cov>=7.0.0",
+]
