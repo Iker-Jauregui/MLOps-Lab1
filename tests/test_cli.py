@@ -1,57 +1,53 @@
 """
 Integration testing with the CLI
-
 """
-from cli.cli import cli
+import pytest
 from click.testing import CliRunner
+from cli.cli import cli
 
-def test_help():
+
+# Fixture
+@pytest.fixture
+def runner():
+    """Fixture to provide a CliRunner instance for all CLI tests."""
+    return CliRunner()
+
+
+def test_help(runner):
     """Tests the command-line interface help message."""
-    runner = CliRunner()
     result = runner.invoke(cli, ["--help"])
     assert result.exit_code == 0
     assert "Show this message and exit." in result.output
 
-# Testing of the add_cli of the cli group
-def test_add_cli():
-    """Tests the command-line interface add command."""
-    runner = CliRunner()
-    result = runner.invoke(cli, ["add", "1", "2"])
+
+# Testing of the predict_cli of the inference group
+def test_predict_cli(runner):
+    """Tests the command-line interface predict command."""
+    result = runner.invoke(cli, ["inference", "predict", "sample.jpg"])
     assert result.exit_code == 0
-    assert "3" in result.output
+    assert "Predicted class:" in result.output
 
 
-# Testing of the subtract_cli of the cli group
-def test_subtract_cli():
-    """Tests the command-line interface subtract command."""
-    runner = CliRunner()
-    result = runner.invoke(cli, ["subtract", "5", "3"])
+def test_predict_cli_with_custom_classes(runner):
+    """Tests predict with custom class names."""
+    result = runner.invoke(
+        cli,
+        ["inference", "predict", "sample.jpg", "--class-names", "cat,dog"]
+    )
     assert result.exit_code == 0
-    assert "2" in result.output
+    assert "Predicted class:" in result.output
 
 
-# Testing of the multiply_cli of the cli group
-def test_multiply_cli():
-    """Tests the command-line interface multiply command."""
-    runner = CliRunner()
-    result = runner.invoke(cli, ["multiply", "2", "3"])
+# Testing of the resize_cli of the transform group
+def test_resize_cli(runner):
+    """Tests the command-line interface resize command."""
+    result = runner.invoke(cli, ["transform", "resize", "sample.jpg", "32", "32"])
     assert result.exit_code == 0
-    assert "6" in result.output
+    assert "32" in result.output
 
 
-# Testing of the divide_cli of the cli group
-def test_divide_cli():
-    """Tests the command-line interface divide command."""
-    runner = CliRunner()
-    result = runner.invoke(cli, ["divide", "6", "3"])
+def test_resize_cli_invalid_width(runner):
+    """Tests resize with invalid width."""
+    result = runner.invoke(cli, ["transform", "resize", "sample.jpg", "0", "32"])
     assert result.exit_code == 0
-    assert "2" in result.output
-
-
-# Testing of the power_cli of the cli group
-def test_power_cli():
-    """Tests the command-line interface power command."""
-    runner = CliRunner()
-    result = runner.invoke(cli, ["power", "2", "3"])
-    assert result.exit_code == 0
-    assert "8" in result.output
+    assert "Error" in result.output

@@ -1,17 +1,20 @@
-# Import the libraries, classes and functions
+"""FastAPI application for image classification."""
+import io
 import uvicorn
-from fastapi import FastAPI, Form, HTTPException
+from pathlib import Path
+from PIL import Image
+from fastapi import FastAPI, Form, HTTPException, UploadFile, File
 from fastapi.templating import Jinja2Templates
 from fastapi.requests import Request
 from fastapi.responses import HTMLResponse
 
-# from pydantic import BaseModel
-from mylib.calculator import add, subtract, multiply, divide, power
+from mylib.classifier import predict as predict_func
+from mylib.classifier import resize as resize_func
 
 # Create an instance of FastAPI
 app = FastAPI(
-    title="API of the Calculator using FastAPI",
-    description="API to perform arithmetical operations using mylib.calculator",
+    title="API of the Image Classifier using FastAPI",
+    description="API to perform image predictions and transforms using mylib.classifier",
     version="1.0.0",
 )
 
@@ -22,72 +25,91 @@ templates = Jinja2Templates(directory="templates")
 # Initial endpoint
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    return templates.TemplateResponse(request, "home.html")
+    """Home endpoint returning HTML template."""
+    return templates.TemplateResponse("home.html", {"request": request})
 
 
-# # Input class (with Pydantic) to define the input arguments of the calculator
-# class CalcRequest(BaseModel):
-#     operation: str
-#     a: float
-#     b: float
-
-
-# Main endpoint to perform the artihmetical operations using the input class defined with Pydantic
-@app.post("/calculate")
-async def calculate(op: str = Form(), a: float = Form(), b: float = Form()):
+# Main endpoint to perform the image prediction
+@app.post("/predict")
+async def predict_endpoint(
+    file: UploadFile = File(...),
+    class_names: str = Form(default="cardboard,paper,plastic,metal,trash,glass")
+):
     """
-    It performs an arithmetical operation according to the input parameters.
+    Predict the class of the input image.
+    
+    Parameters
+    ----------
+    file : UploadFile
+        Image file to classify
+    class_names : str
+        Comma-separated class names (default: "cardboard,paper,plastic,metal,trash,glass")
+    
+    Returns
+    -------
+    dict
+        Dictionary with predicted class
     """
-    op = op.lower()
-
-    if op not in ["add", "subtract", "multiply", "divide", "power"]:
-        raise HTTPException(status_code=400, detail="Unvalid operation")
-
-    result = None
-    if op == "add":
-        result = add(a, b)
-    elif op == "subtract":
-        result = subtract(a, b)
-    elif op == "multiply":
-        result = multiply(a, b)
-    elif op == "divide":
-        if b == 0:
-            raise HTTPException(status_code=400, detail="Zero division not allowed")
-        result = divide(a, b)
-    elif op == "power":
-        result = power(a, b)
-
-    return {"result": result}
+    try:
+        # Read image from upload
+        contents = await file.read()
+        image = Image.open(io.BytesIO(contents))
+        
+        # Convert class_names string to list
+        class_list = [c.strip() for c in class_names.split(',')]
+        
+        # Get prediction
+        prediction = predict_func(image, class_list)
+        
+        return {"predicted_class": prediction}
+    
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error processing image: {str(e)}")
 
 
-# # Main endpoint to perform the artihmetical operations using the input class defined with Pydantic
-# @app.post("/calculate")
-# def calculate(data: CalcRequest):
-#     """
-#     It performs an arithmetical operation according to the input parameters.
-#     """
-#     op = data.operation.lower()
-#     a = data.a
-#     b = data.b
-
-#     if op not in ["add", "subtract", "multiply", "divide", "power"]:
-#         raise HTTPException(status_code=400, detail="Unvalid operation")
-
-#     result = None
-#     if op == "add":
-#         result = add(a, b)
-#     elif op == "subtract":
-#         result = subtract(a, b)
-#     elif op == "multiply":
-#         result = multiply(a, b)
-#     elif op == "divide":
-#         if b == 0:
-#             raise HTTPException(status_code=400, detail="Zero division not allowed")
-#         result = divide(a, b)
-#     elif op == "power":
-#         result = power(a, b)
-
-#     return {"result": result}
+# Main endpoint to perform the image resize
+@app.post("/resize")
+async def resize_endpoint(
+    file: UploadFile = File(...),
+    width: int = Form(...),
+    height: int = Form(...)
+):
+    """
+    Resize the input image.
+    
+    Parameters
+    ----------
+    file : UploadFile
+        Image file to resize
+    width : int
+        Target width (must be positive)
+    height : int
+        Target height (must be positive)
+    
+    Returns
+    -------
+    dict
+        Dictionary with new image dimensions
+    """
+    if width <= 0:
+        raise HTTPException(status_code=400, detail="'width' must be a positive value")
+    if height <= 0:
+        raise HTTPException(status_code=400, detail="'height' must be a positive value")
+    
+    try:
+        # Read image from upload
+        contents = await file.read()
+        image = Image.open(io.BytesIO(contents))
+        
+        # Resize image
+        new_size = resize_func(image, width, height)
+        
+        return {"resized_dimensions": new_size}
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error resizing image: {str(e)}")
 
 
 # Entry point (for direct execution only)

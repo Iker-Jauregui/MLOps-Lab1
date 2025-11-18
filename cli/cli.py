@@ -3,86 +3,76 @@ Main CLI or app entry point
 """
 
 import click
-from mylib.calculator import add, subtract, multiply, divide, power
+from mylib.classifier import predict, resize
 
 
 # We create a group of commands
 @click.group()
 def cli():
-    """Main CLI to perform arithmetical operations."""
+    """Main CLI to perform image operations."""
 
 
-# We create a command, named add, associated with the previous group, which receives two float arguments (a and b)
-@cli.command("add")
-@click.argument("a", type=float)
-@click.argument("b", type=float)
-def add_cli(a, b):
-    """Add two numbers together
-
-    Example:
-        uv run python -m cli.cli add 1 2
-    """
-
-    click.echo(click.style(str(add(a, b)), fg="green"))
+# ============================================================================
+# INFERENCE GROUP - Image inference operations
+# ============================================================================
+@cli.group()
+def inference():
+    """Commands for image inference operations."""
 
 
-# We create a command, named subtract, associated with the previous group, which receives two float arguments (a and b)
-@cli.command("subtract")
-@click.argument("a", type=float)
-@click.argument("b", type=float)
-def subtract_cli(a, b):
-    """Subtract two numbers
-
-    Example:
-        uv run python -m cli.cli subtract 5 3
-    """
-
-    click.echo(click.style(str(subtract(a, b)), fg="green"))
-
-
-# We create a command, named multiply, associated with the previous group, which receives two float arguments (a and b)
-@cli.command("multiply")
-@click.argument("a", type=float)
-@click.argument("b", type=float)
-def multiply_cli(a, b):
-    """Multiply two numbers
+# We create a command, named predict, associated with the previous group
+@inference.command("predict")
+@click.argument("image-path", type=str)
+@click.option(
+    "--class-names",
+    default="cardboard,paper,plastic,metal,trash,glass",
+    type=str,
+    help="Comma-separated class names (e.g., 'cat,dog,bird')."
+)
+def predict_cli(image_path, class_names):
+    """Predict image class.
 
     Example:
-        uv run python -m cli.cli multiply 2 3
+        uv run python -m cli.cli inference predict 'sample.jpg'
     """
+    try:
+        # Convert comma-separated string to list
+        class_list = [c.strip() for c in class_names.split(',')]
+        result = predict(image_path, class_list)
+        click.echo(click.style(f"Predicted class: {result}", fg="green"))
+    except Exception as e:
+        click.echo(click.style(f"Error: {str(e)}", fg="red"), err=True)
 
-    click.echo(click.style(str(multiply(a, b)), fg="green"))
+
+# ============================================================================
+# TRANSFORM GROUP - Image transform operations
+# ============================================================================
+
+@cli.group()
+def transform():
+    """Commands for image transform operations."""
 
 
-# We create a command, named divide, associated with the previous group, which receives two float arguments (a and b)
-@cli.command("divide")
-@click.argument("a", type=float)
-@click.argument("b", type=float)
-def divide_cli(a, b):
-    """Divide two numbers
+@transform.command("resize")
+@click.argument("image-path", type=str)
+@click.argument("width", type=int)
+@click.argument("height", type=int)
+def resize_cli(image_path, width, height):
+    """Resize image.
 
     Example:
-        uv run python -m cli.cli divide 6 3
+        uv run python -m cli.cli transform resize 'sample.jpg' 224 224
     """
-
-    if b == 0:
-        click.echo(click.style("Error: Division by zero", fg="red"))
-    else:
-        click.echo(click.style(str(divide(a, b)), fg="green"))
-
-
-# We create a command, named power, associated with the previous group, which receives two float arguments (a and b)
-@cli.command("power")
-@click.argument("a", type=float)
-@click.argument("b", type=float)
-def power_cli(a, b):
-    """Raise a number to the power of another
-
-    Example:
-        uv run python -m cli.cli power 2 3
-    """
-
-    click.echo(click.style(str(power(a, b)), fg="green"))
+    try:
+        if width <= 0:
+            raise ValueError("'width' must be a positive value")
+        if height <= 0:
+            raise ValueError("'height' must be a positive value")
+        
+        result = resize(image_path, width, height)
+        click.echo(click.style(f"Resized to: {result}", fg="green"))
+    except Exception as e:
+        click.echo(click.style(f"Error: {str(e)}", fg="red"), err=True)
 
 
 # Main entry point
