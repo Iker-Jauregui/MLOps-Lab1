@@ -27,7 +27,7 @@ def inference():
     "--class-names",
     default="cardboard,paper,plastic,metal,trash,glass",
     type=str,
-    help="Comma-separated class names (e.g., 'cat,dog,bird')."
+    help="Comma-separated class names (e.g., 'cat,dog,bird').",
 )
 def predict_cli(image_path, class_names):
     """Predict image class.
@@ -37,16 +37,17 @@ def predict_cli(image_path, class_names):
     """
     try:
         # Convert comma-separated string to list
-        class_list = [c.strip() for c in class_names.split(',')]
+        class_list = [c.strip() for c in class_names.split(",")]
         result = predict(image_path, class_list)
         click.echo(click.style(f"Predicted class: {result}", fg="green"))
-    except Exception as e:
+    except (FileNotFoundError, IOError, ValueError) as e:
         click.echo(click.style(f"Error: {str(e)}", fg="red"), err=True)
 
 
 # ============================================================================
 # TRANSFORM GROUP - Image transform operations
 # ============================================================================
+
 
 @cli.group()
 def transform():
@@ -68,10 +69,10 @@ def resize_cli(image_path, width, height):
             raise ValueError("'width' must be a positive value")
         if height <= 0:
             raise ValueError("'height' must be a positive value")
-        
+
         result = resize(image_path, width, height)
         click.echo(click.style(f"Resized to: {result}", fg="green"))
-    except Exception as e:
+    except (FileNotFoundError, IOError, ValueError) as e:
         click.echo(click.style(f"Error: {str(e)}", fg="red"), err=True)
 
 

@@ -1,7 +1,7 @@
 """FastAPI application for image classification."""
+
 import io
 import uvicorn
-from pathlib import Path
 from PIL import Image
 from fastapi import FastAPI, Form, HTTPException, UploadFile, File
 from fastapi.templating import Jinja2Templates
@@ -26,25 +26,25 @@ templates = Jinja2Templates(directory="templates")
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     """Home endpoint returning HTML template."""
-    return templates.TemplateResponse("home.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="home.html")
 
 
 # Main endpoint to perform the image prediction
 @app.post("/predict")
 async def predict_endpoint(
     file: UploadFile = File(...),
-    class_names: str = Form(default="cardboard,paper,plastic,metal,trash,glass")
+    class_names: str = Form(default="cardboard,paper,plastic,metal,trash,glass"),
 ):
     """
     Predict the class of the input image.
-    
+
     Parameters
     ----------
     file : UploadFile
         Image file to classify
     class_names : str
         Comma-separated class names (default: "cardboard,paper,plastic,metal,trash,glass")
-    
+
     Returns
     -------
     dict
@@ -54,29 +54,29 @@ async def predict_endpoint(
         # Read image from upload
         contents = await file.read()
         image = Image.open(io.BytesIO(contents))
-        
+
         # Convert class_names string to list
-        class_list = [c.strip() for c in class_names.split(',')]
-        
+        class_list = [c.strip() for c in class_names.split(",")]
+
         # Get prediction
         prediction = predict_func(image, class_list)
-        
+
         return {"predicted_class": prediction}
-    
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error processing image: {str(e)}")
+
+    except (FileNotFoundError, IOError, ValueError) as e:
+        raise HTTPException(
+            status_code=400, detail=f"Error processing image: {str(e)}"
+        ) from e
 
 
 # Main endpoint to perform the image resize
 @app.post("/resize")
 async def resize_endpoint(
-    file: UploadFile = File(...),
-    width: int = Form(...),
-    height: int = Form(...)
+    file: UploadFile = File(...), width: int = Form(...), height: int = Form(...)
 ):
     """
     Resize the input image.
-    
+
     Parameters
     ----------
     file : UploadFile
@@ -85,7 +85,7 @@ async def resize_endpoint(
         Target width (must be positive)
     height : int
         Target height (must be positive)
-    
+
     Returns
     -------
     dict
@@ -95,21 +95,21 @@ async def resize_endpoint(
         raise HTTPException(status_code=400, detail="'width' must be a positive value")
     if height <= 0:
         raise HTTPException(status_code=400, detail="'height' must be a positive value")
-    
+
     try:
         # Read image from upload
         contents = await file.read()
         image = Image.open(io.BytesIO(contents))
-        
+
         # Resize image
         new_size = resize_func(image, width, height)
-        
+
         return {"resized_dimensions": new_size}
-    
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error resizing image: {str(e)}")
+
+    except (FileNotFoundError, IOError, ValueError) as e:
+        raise HTTPException(
+            status_code=400, detail=f"Error resizing image: {str(e)}"
+        ) from e
 
 
 # Entry point (for direct execution only)

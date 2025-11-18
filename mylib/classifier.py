@@ -1,6 +1,7 @@
 """
 Image classifier library
 """
+
 import random
 from pathlib import Path
 from PIL import Image
@@ -39,8 +40,8 @@ def predict(image_path, class_names=None):
     >>> predicted_class = predict("sample.jpg", ['cat', 'dog'])
     """
     if class_names is None:
-        class_names = ['cardboard', 'paper', 'plastic', 'metal', 'trash', 'glass']
-    
+        class_names = ["cardboard", "paper", "plastic", "metal", "trash", "glass"]
+
     if not class_names:
         raise ValueError("class_names cannot be empty")
 
@@ -49,9 +50,9 @@ def predict(image_path, class_names=None):
         if isinstance(image_path, (str, Path)):
             if not Path(image_path).exists():
                 raise FileNotFoundError(f"Image file not found: {image_path}")
-            image = Image.open(image_path).convert("RGB")
+            Image.open(image_path).convert("RGB")
         elif isinstance(image_path, Image.Image):
-            image = image_path.convert("RGB")
+            image_path.convert("RGB")
         else:
             raise ValueError(f"Unsupported image_path type: {type(image_path)}")
 
@@ -116,7 +117,7 @@ def resize(image_path, width, height):
 
         # Resize the image
         resized_image = image.resize((width, height))
-        
+
         return resized_image.size  # Returns (width, height)
 
     except FileNotFoundError:
