@@ -1,6 +1,10 @@
+SHELL := /bin/bash
+
 install:
-	curl -LsSf https://astral.sh/uv/install.sh | sh &&\
-	source ~/.bashrc
+	@if ! command -v uv &> /dev/null; then \
+		curl -LsSf https://astral.sh/uv/install.sh | sh && \
+		source ~/.bashrc; \
+	fi
 	uv sync
 
 test:
@@ -10,7 +14,7 @@ format:
 	uv run black mylib/*.py cli/*.py api/*.py #*.py
 
 lint:
-	uv run pylint --disable=R,C --ignore-patterns=test_.*\.py mylib/*.py cli/*.py api/*.py 
+	uv run pylint --disable=R,C --ignore-patterns=test_.*?\.py mylib/*.py cli/*.py api/*.py 
 
 refactor: format lint
 
