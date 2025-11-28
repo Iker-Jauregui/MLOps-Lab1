@@ -1,9 +1,9 @@
 SHELL := /bin/bash
+PATH := $(HOME)/.local/bin:$(PATH)
 
 install:
 	@if ! command -v uv &> /dev/null; then \
-		curl -LsSf https://astral.sh/uv/install.sh | sh && \
-		source ~/.bashrc; \
+		curl -LsSf https://astral.sh/uv/install.sh | sh; \
 	fi
 	uv sync
 
