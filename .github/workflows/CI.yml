@@ -5,18 +5,25 @@ on:
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+      
       - name: install packages
         run: make install
-        shell: bash
+      
       - name: format
         run: make format
+      
       - name: lint
         run: make lint
+      
       - name: test
         run: make test
